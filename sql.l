@@ -9,7 +9,7 @@
 "("             {return BO;}
 ","		{return COMMA;}
 ")"		{return BC;}
-\"[a-zA-Z0-9]+\" {return constant_val;}
+\"[a-zA-Z0-9]+\" {strcpy(yylval.str, yytext); return constant_val;}
 "SELECT"		{return SELECT;}
 "INSERT"	{return INSERT;}
 "INTO"	{return INTO;}
@@ -32,8 +32,8 @@
 "<"|">"|">="|"<="|"=="|"<>" {return COMPARATOR;}
 "UNIQUE" 		{return UNIQUE;}
 "*"				{return WILDCARD;}
-[a-zA-Z]+[a-zA-Z0-9]*	{return identifier;}
-[0-9]+			{return numeric_val;}
+[a-zA-Z]+[a-zA-Z0-9]*	{strcpy(yylval.str, yytext);   return identifier;}
+[0-9]+			{strcpy(yylval.str, yytext); return numeric_val;}
 [ \t\n]			{;}
 .				{printf("SYNTAX ROR!!\n\n");exit(0);}
 

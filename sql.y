@@ -4,9 +4,21 @@
 #define YYDEBUG 1
 #define max_identifier_length 20
 void yyerror(char *s);
-%}
+typedef struct node{
+	int cptr;
+	struct node *child[50];
+	char s[50];
+} node;
 
-%union {char token_class[100];}
+node *create(char *s){
+	node *nd = (node *)malloc(sizeof(node));
+	strcpy(nd->s, s);
+	nd->cptr = 0;
+	return nd;
+}
+void print(node *);
+%}
+%union {char str[100]; struct node *nd_ptr;}
 %start line
 %token type
 %token SELECT
@@ -39,27 +51,120 @@ void yyerror(char *s);
 %token COMMA
 %token EQUAL 
 %token VALUES 
-%token <token_class> identifier
-%token <token_class> constant_val
-%token <token_class> numeric_val	
+%token <str> identifier
+%token <str> constant_val
+%token <str> numeric_val	
+%type <nd_ptr> drop 
+%type <nd_ptr> constraint
+ 
+
+ %type <nd_ptr> schema_list 
+ %type <nd_ptr> selection 
+ %type <nd_ptr> sel 
+ %type <nd_ptr> creation  
+ %type <nd_ptr> query 
+ %type <nd_ptr> tab_list 
+ %type <nd_ptr> colums 
+%type <nd_ptr> WILDCARD
+%type <nd_ptr> id_list 
+%type <nd_ptr> CONJUNCTION  
+
 
 %%
 
-line  : deletion | alter_add | alter_drop | insertion | updation | creation  | selection | drop {printf("DROPPING!!\n");}
+line  : deletion | alter_add | alter_drop | insertion | updation | creation  {		
+print($1);} | selection {print($1);}| drop {printf("DROPPING!!\n");}
 
-creation : CREATE TABLE identifier BO schema_list BC COL
+creation : CREATE TABLE identifier BO schema_list BC COL  { 
+	 			node *nd = create("STATEMENT");
+				nd->child[(nd->cptr++)] = create("CREATE");
+			  	nd->child[(nd->cptr++)] = create("TABLE");
+				nd->child[(nd->cptr++)] = create($3);
+				nd->child[(nd->cptr++)] = create("(");
+				nd->child[(nd->cptr++)] = $5;
+				nd->child[(nd->cptr++)] = create(")");	
+				//	printf("\n*****************  %d   %s  **********\n\n", nd->child[4]->child[2]->cptr, nd->child[4]->child[2]->s);
+		
+		$$ = nd;				
+		}
 
-schema_list : identifier identifier constraint COMMA schema_list 
-	    | identifier identifier constraint
+schema_list : identifier identifier constraint COMMA schema_list {
+			node *nd = create("SCHEMA_LIST");
+			nd->child[(nd->cptr++)] = create($1);
+			nd->child[(nd->cptr++)] = create($1);
+			nd->child[(nd->cptr++)] = $3;
+			nd->child[(nd->cptr++)] = create(",");
+			nd->child[(nd->cptr++)] = create($5);
+			$$ = nd;	   
+} 
+	    | identifier identifier constraint {
+			node *nd = create("SCHEMA_LIST");
+			nd->child[(nd->cptr++)] = create($1);
+			nd->child[(nd->cptr++)] = create($2);
+			nd->child[(nd->cptr++)] = $3;
+					$$ = nd;
+}
 
-selection : sel WHERE constraint COL | sel COL
-sel : SELECT query 
+selection : sel WHERE constraint COL{
+	  	node *nd = create("SELECTION");
+		nd->child[(nd->cptr++)] = $1;
+		nd->child[(nd->cptr++)] = create("WHERE");
+		nd->child[(nd->cptr++)] = $3;
+		$$ = nd;
+} |  sel WHERE constraint {
+	  	node *nd = create("SELECTION");
+		nd->child[(nd->cptr++)] = $1;
+		nd->child[(nd->cptr++)] = create("WHERE");
+		nd->child[(nd->cptr++)] = $3;
+		$$ = nd;
+} 
+| sel COL {
+	node *nd = create("SELECTION");
+	nd->child[(nd->cptr++)] = $1;
+	$$ = nd;
+} | 
+sel {
+	node *nd = create("SELECTION");
+	nd->child[(nd->cptr++)] = $1;
+	$$ = nd;
+}
+sel : SELECT query {
+	node *nd = create("SELECTION SUBCLASS");
+	nd->child[(nd->cptr++)] = create("SELECT");   
+	nd->child[(nd->cptr++)] = $2;
+	$$ = nd;
+} 
 
-query : colums FROM tab_list  
+query : colums FROM tab_list  {
+	node *nd = create("QUERY");
+	nd->child[(nd->cptr++)] = $1;
+	nd->child[(nd->cptr++)] = create("FROM");
+	nd->child[(nd->cptr++)] = $3;
+	$$ = nd;
+}
 
-tab_list : identifier | BO selection BC 
+tab_list : identifier {
+	node *nd = create("TAB_LIST");
+	nd->child[(nd->cptr++)] = $1;
+	$$ = nd;	 
+}
+	 | BO selection BC {
+	node *nd = create("TAB_LIST");
+	nd->child[(nd->cptr++)] = create("(");
+	nd->child[(nd->cptr++)] = $2;
+	nd->child[(nd->cptr++)] = create(")");
+	$$ = nd;
+}
 
-colums : WILDCARD | id_list
+colums : WILDCARD {
+	node *nd = create("COLUMNS");
+	nd->child[(nd->cptr++)] = create("*");
+	$$ = nd;      
+} | id_list {
+	node *nd = create("COLUMNS");
+	nd->child[(nd->cptr++)] = $1;
+	$$ = nd;
+}
 
 insertion : INSERT INTO identifier vb BO value_list BC COL
 
@@ -80,12 +185,31 @@ alter_drop : ALTER TABLE identifier DROP COLUMN identifier COL
 alter_add : ALTER TABLE identifier ADD identifier identifier COL 
 
 
-constraint : condition CONJUNCTION constraint | condition
-id_list : identifier COMMA id_list | identifier 
-drop : DROP TABLE identifier COL
+constraint : condition CONJUNCTION constraint {
+		node *nd = create("CONSTRAINT");
+		nd->child[(nd->cptr++)] = create("CONDITION");
+		nd->child[(nd->cptr++)] = $2;
+		nd->child[(nd->cptr++)] = $3;
+		$$ = nd;	
+   }
+	| condition {node *nd = create("CONSTRAINT"); $$ = nd;}
+id_list : identifier COMMA id_list {$$ = create($1);} | identifier {$$ = create($1);} 
+drop : DROP TABLE identifier COL {
+		node *nd = create("drop production"); 
+		nd->child[(nd->cptr++)] = create("DROP");
+		nd->child[(nd->cptr++)] = create("TABLE");
+		nd->child[(nd->cptr++)] = create($3);
+		$$ = nd;		
+}
 
 condition : identifier COMPARATOR identifier | v_val COMPARATOR v_val | v_val COMPARATOR identifier | identifier COMPARATOR v_val
-v_val : constant_val | numeric_val 
+v_val : constant_val {
+node *nd = create($1); 
+                 
+			}
+      | numeric_val {	node *nd = create($1); 
+                   
+			} 
 
 
 %%
@@ -94,6 +218,31 @@ int main (void) {
 	/* init symbol table */
 	yydebug = 1;
 	return yyparse ( );
+}
+
+void print(node *nd){
+//printf("\n*****************  %d   %s  ******  PLEASE PLEASE ****\n\n", nd->child[4]->child[2]->cptr, nd->child[4]->child[2]->s);
+
+//	printf("|| %s ||\n", nd->s);
+	node *q[1000];
+	int s = 0, e = 0;
+	q[e++] = nd;
+	q[e++] = NULL;
+	while(e!=s){
+		if(q[s] == NULL){
+			s++;
+			printf("\n\n");
+			if(e!=s)
+			q[e++] = NULL;
+			continue;
+		}
+		printf("  %s  ", q[s]->s);
+		for(int i=0;i<q[s]->cptr;++i){
+			q[e++] = q[s]->child[i];
+//			printf("Child %d --> %s\n", i, q[s]->child[i]->s);
+		}
+		s++;
+	}
 }
 
 void yyerror (char *s) {printf("%s\n", s);} 
