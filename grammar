@@ -1,0 +1,38 @@
+P -> creation | insertion | selection | deletion | drop | 
+
+creation -> CREATE TABLE identifier ( schema_list );
+schema_list -> identifier identifier constraint, schema_list | identifier identifier constraint
+
+
+selection -> SELECT query;
+query -> columns FROM tab_list
+tab_list -> identifier | ( selection )
+columns -> * | id_list
+
+insertion -> INSERT INTO identifier fields VALUES (value_list);
+fields -> ( id_list ) | eps
+value_list -> literal, value_list | literal
+
+update -> UPDATE identifier SET updation_list WHERE constraint;
+updation_list -> identifier = literal, updation_list | identifier = literal
+
+
+deletion -> DELETE FROM identifier WHERE constraint;
+
+drop -> DROP TABLE identifier;
+
+alter_drop -> ALTER TABLE identifier DROP COLUMN identifier;
+
+alter_add ->ALTER TABLE identifier ADD identifier identifier;
+
+
+
+identifier -> [A-Ba-b]+
+literal -> ([0-9] | [a-b] | [A-B] | .)+
+
+constraint -> condition conjunction constraint | eps
+condition -> identifier comparator identifier
+comparator -> < | > | <= | >= | = | !=
+conjunction -> AND | OR 
+
+
