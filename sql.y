@@ -1,55 +1,100 @@
 %{
 #include<stdio.h>
 #include<stdlib.h>
+#define YYDEBUG 1
 #define max_identifier_length 20
 void yyerror(char *s);
-int tab[52];
-void update(char sym, int t);
 %}
 
-%union {int num; char token_class;}
+%union {char token_class[100];}
 %start line
-%token print
-%token exit_cmd
+%token type
+%token SELECT
+%token INTO
+%token UPDATE
+%token FROM 
+%token CONJUNCTION
+%token SET
+%token DROP
+%token ALTER
+%token COLUMN
+%token ADD
+%token INT
+%token VARCHAR
+%token CHAR
+%token NOT
+%token COL
+%token NUL
+%token UNIQUE
+%token WILDCARD
+%token CREATE
+%token TABLE
+%token INSERT
+%token DELETE
+%token WHERE
+%token COLON
+%token BO
+%token BC
+%token COMPARATOR
+%token COMMA
+%token EQUAL 
+%token VALUES 
 %token <token_class> identifier
-%token <num> number
-%type <num> line exp term
-%type <token_class> assignment
-
-	
-%%
-
-line  : assignment ';' {;}
-      | exit_cmd ';'	{exit(0);}
-      | print exp ';' {printf("Printing %d\n", $2);}
-      | assignment ';' line  {;}
-      | print exp  ';' line  {printf("Printing %d\n", $2);} 
-
-
-assignment : identifier '=' exp {update($1, $3);}
-
-exp : term {$$ = $1;}
-    | exp '+' term {$$ = $1 + $3;}
-    | exp '-' term {$$ = $1 - $3;}
-
-term : number 	{$$ = $1;}
-     | identifier {$$ = tab[$1];}
+%token <token_class> constant_val
+%token <token_class> numeric_val	
 
 %%
 
-void update(char sym, int t){
-	tab[sym] = t;
-}
+line  : deletion | alter_add | alter_drop | insertion | updation | creation  | selection | drop {printf("DROPPING!!\n");}
+
+creation : CREATE TABLE identifier BO schema_list BC COL
+
+schema_list : identifier identifier constraint COMMA schema_list 
+	    | identifier identifier constraint
+
+selection : sel WHERE constraint COL | sel COL
+sel : SELECT query 
+
+query : colums FROM tab_list  
+
+tab_list : identifier | BO selection BC 
+
+colums : WILDCARD | id_list
+
+insertion : INSERT INTO identifier vb BO value_list BC COL
+
+vb: fields VALUES | VALUES
+fields :  BO id_list BC
+
+value_list : v_val COMMA value_list | v_val
+
+
+updation : UPDATE identifier SET updation_list WHERE constraint COL
+
+updation_list : identifier EQUAL constant_val COMMA updation_list | identifier EQUAL constant_val 
+
+deletion : DELETE FROM identifier WHERE constraint COL
+
+alter_drop : ALTER TABLE identifier DROP COLUMN identifier COL
+
+alter_add : ALTER TABLE identifier ADD identifier identifier COL 
+
+
+constraint : condition CONJUNCTION constraint | condition
+id_list : identifier COMMA id_list | identifier 
+drop : DROP TABLE identifier COL
+
+condition : identifier COMPARATOR identifier | v_val COMPARATOR v_val | v_val COMPARATOR identifier | identifier COMPARATOR v_val
+v_val : constant_val | numeric_val 
+
+
+%%
 
 int main (void) {
 	/* init symbol table */
-	int i;
-	for(i=0; i<52; i++) {
-		tab[i] = 0;
-	}
-
+	yydebug = 1;
 	return yyparse ( );
 }
 
-void yyerror (char *s) {fprintf (stderr, "%s\n", s);} 
+void yyerror (char *s) {printf("%s\n", s);} 
 
