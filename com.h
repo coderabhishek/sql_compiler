@@ -2,6 +2,7 @@
 
 short int match (char *s , int i );
 //#include "c-extensions.h"
+short int updation_list();
 short int COL  (void);
 short int identifier  (void);
 short int COMMA  (void);

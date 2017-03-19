@@ -3,7 +3,7 @@
 #include "com.h"
 #define true 1
 #define false 0
-
+int ch = 0;
 typedef short int bool;
 
 char input[1000000];
@@ -20,20 +20,28 @@ void sanitize(){
 }
 
 bool match(char *s, int i){
-	printf("9999   %c %c\n", input[ptr], input[ptr+1]);
+	if(ch) printf("==================================\n\n%s\n\n", s);
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;
 	char test[i];
-	for(int j=0;j<i && input[j]!='\0';++j){
+	int j;
+	for(j=0;j<i && input[ptr]!='\0' && input[ptr]!=' ';++j){
+		if(ch) printf("&& %c &&\n", input[ptr]);
 		test[j] = input[ptr++];
 	}
-	
+	test[j++] = '\0';	
+	if(ch) printf("\n\n==============================================\n\n");
 	return (strcmp(test, s)==0);
 }
 
 bool constant_val(){
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;
 	if(input[ptr++]!='"')
 		return false;
 	while(input[ptr]!='"'){
-		if(input[ptr] == '\0')
+		if(ch) printf("Constant val char-> %c\n", input[ptr]);
+		if(input[ptr] == '\0' || input[ptr] == ' ')
 			return false;
 		ptr++;
 	}
@@ -41,8 +49,13 @@ bool constant_val(){
 }
 
 bool numeric_val(){
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;
 	if(!isdigit(input[ptr])) return false;
-	while(isdigit(input[ptr++]));
+	while(isdigit(input[ptr])){
+	//	if(ch) printf("digit %c\n", input[ptr]);
+		ptr++;
+	}
 	return true;
 }
 
@@ -53,47 +66,62 @@ bool v_val(){
 		return true;
 	else {
 		ptr = save;
-		return numeric_val();
+		int temp = numeric_val();
+	//	if(ch) printf("050505005050#$%c %c\n", input[ptr-1], input[ptr]);
+		return temp;
 	}
 }
 
 bool COL(){
-	if(input[ptr++] = ';')
-		return true;
-	else false;
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;
+	return (input[ptr++] == ';');
+	
 }
 
+
 bool identifier(){
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;
+	if(ch) printf("IDENTIFIER  %c\n\n", input[ptr]);
+
 	int check = ptr;
 	if(!isalpha(input[ptr++]))
 		return false;
-	while(isalnum(input[ptr]))
-			ptr++;
+
+	while(isalnum(input[ptr])){
+		if(ch) printf(" ** %c **\n", input[ptr]);
+		ptr++;
+	}
 	return true;
 }
 
 bool COMMA(){
-	if(input[ptr++] == ',')
-	return true;
-	else false;
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;
+	return (input[ptr++] == ',');
 }
 
 
 bool BO(){
-	if(input[ptr++] == '(')
-	return true;
-	else false;
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;
+	if(ch) printf("BO  %c\n", input[ptr]);
+	return (input[ptr++] == '(');
+	
 }
 bool BC(){
-	if(input[ptr++] == ')')
-	return true;
-	else false;
+	//	if(ch) printf("BBBBBBCCCCCCCCCCCCCCC!!\n");
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;
+	return (input[ptr++] == ')');
 }
 
 bool WILDCARD(){
-	if(input[ptr++] == '*')
-	return true;
-	else false;
+
+	while(input[ptr]==' ' || input[ptr] == '\t')
+		ptr++;	
+	return (input[ptr++] == '*');
 }
 
 bool id_list(){
@@ -102,9 +130,9 @@ bool id_list(){
 }
 
 bool tab_list(){
-	//printf("&&\n\n%s\n\n&&", input);
+	//if(ch) printf("&&\n\n%s\n\n&&", input);
 	int save = ptr;
-	return ((ptr = save, identifier()) || (ptr = save, (BO() && selection() && BC())));
+	return ((ptr = save, id_list()) || (ptr = save, (BO() && sel() && BC())));
 }
 
 bool columns(){
@@ -115,47 +143,106 @@ bool columns(){
 
 
 bool query(){
-	printf("++    %c %c %c\n", input[ptr], input[ptr+1], input[ptr+2]);
+	//if(ch) printf("++    %c %c %c\n", input[ptr], input[ptr+1], input[ptr+2]);
 	return (columns() && match("FROM", 4) && tab_list());
 }
 
 bool sel(){
- return (match("SELECT", 6) && query());
+	return (match("SELECT", 6) && query());
+}
+
+
+bool updation(){
+	return(match("UPDATE", 6) && identifier() && match("SET", 3) && updation_list() && match("WHERE", 5) && constraint() && COL());
+}
+
+bool updation_list(){
+	int save = ptr;
+	return((ptr = save, identifier() && match("EQUAL", 5) && constant_val() && COMMA() && updation_list()) || (ptr = save, identifier() && match("EQUAL", 5) && constant_val()));
+}
+
+
+bool deletion(){
+	return(match("DELETE", 8) && match("FROM", 4) && identifier() && match("WHERE", 5) && constraint() && COL());
+}
+
+bool alter_drop(){
+	return(match("ALTER", 5) && match("TABLE", 5) && identifier() && match("DROP", 4) && match("COLUMN", 6) && identifier() && COL());
+}
+
+bool alter_add(){
+	return(match("ALTER", 5) && match("TABLE", 5) && identifier() && match("ADD", 3) && match("COLUMN", 6) && identifier() && identifier() && COL());
+}
+
+
+bool value_list(){
+	int save = ptr;
+	return((ptr = save, v_val() && COMMA() && value_list()) || (ptr = save, v_val()));
+}
+
+bool fields(){
+	return(BO() && id_list() && BC());
+}
+
+
+bool vb(){
+	int save = ptr;
+	return ((ptr = save, fields() && match("VALUES", 6)) || (ptr = save, match("VALUES", 6)));
+}
+
+
+bool insertion(){
+	return(match("INSERT", 6) && match("INTO", 4) && identifier() && vb() && BO() && value_list() && BC() && COL());
 }
 
 
 
+
+bool schema_list(){
+//	if(ch) printf("SCHEMA LIST %c%c%c%c\n", input[ptr], input[ptr+1], input[ptr+2], input[ptr+3]);
+	
+	int save = ptr;
+	return((ptr = save, identifier() && identifier() && constraint() && COMMA() && schema_list()) || (ptr = save, identifier() && identifier() && constraint()));
+}
+
+
+bool creation(){
+	return(match("CREATE", 6) && match("TABLE", 5) && identifier() && BO() && schema_list() && BC() && COL());
+}
+
 bool selection(){
-int save = ptr;
-return ((ptr = save, selection1()) || (ptr = save, selection2()) || (ptr = save, selection3()) || (ptr = save, selection4()));
+	int save = ptr;
+	return ((ptr = save, selection1()) || (ptr = save, selection2()) || (ptr = save, selection3()));
 }
 
 bool selection1(){
-return (sel() && match("WHERE", 5) && constraint() && COL());
+	return (sel() && match("WHERE", 5) && constraint() && COL());
 }
 
 bool selection2(){
-return (sel() && match("WHERE", 5) && constraint());
+	return (sel() && match("WHERE", 5) && constraint());
 }
 
 bool selection3(){
-return (sel() && COL());
+	return (sel() && COL());
 }
 
-bool selection4(){
-	return sel();
-}
 
 bool drop(){
-	return false;
+	return(match("DROP", 4) && match("TABLE", 5) && identifier() && COL());
 }
 
 bool line(){
 	int save = ptr;
-	if((ptr = save, selection()) || 
-	   (ptr = save, drop()))
-		return true;
-	else return false;
+	return((ptr = 0, selection()) || 
+			(ptr = 0, drop()) ||
+			(ptr = 0, deletion()) ||
+			(ptr = 0, updation()) ||
+			(ptr = 0, creation()) ||
+			(ptr = 0, alter_add()) ||
+			(ptr = 0, alter_drop()) ||
+			(ptr = 0, insertion())
+	  );
 }
 
 bool CONJUNCTION(){
@@ -169,7 +256,7 @@ bool CONJUNCTION(){
 bool COMPARATOR(){
 	bool f = (input[ptr] == '>' || input[ptr] == '<' || input[ptr]=='=');
 	ptr++;
-//	printf("%c 9090  %d\n", input[ptr], f);
+	//	if(ch) printf("%c 9090  %d\n", input[ptr], f);
 	return f;
 }
 
@@ -179,16 +266,21 @@ bool condition(){
 }
 
 bool constraint(){
+//	if(ch) printf("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOoo            %c\n\n", input[ptr+1]);
+
 	int save = ptr;
-	return ((ptr = save, (condition() && CONJUNCTION() && constraint())) || (ptr = save, condition()));
+	return ((ptr = save, (condition() && CONJUNCTION() && constraint())) || (ptr = save, condition()));	
 }
 
 int main(){
-	gets(input);
-	sanitize();
-	printf("PARSING:--> %s\n\n", input);
-	int save = 0;
-	printf("%d", line());
-
+	while(1){
+		ptr = 0;
+		gets(input);
+		//sanitize();
+		if(ch) printf("PARSING:--> %s\n\n", input);
+		int save = 0;
+		if(ch) printf("%d", line());
+//		if(ch) printf("--  %c %c\n", input[ptr-1], input[ptr]);
+	}
 	return 0;
 }
