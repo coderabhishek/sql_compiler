@@ -3,7 +3,15 @@
 #include "com.h"
 #define true 1
 #define false 0
+
 int ch = 0;
+int maxp = 0;
+
+int up(){
+	printf("MX --> %d\n", maxp);
+	maxp = (maxp>ptr?maxp:ptr);
+}
+
 typedef short int bool;
 
 char input[1000000];
@@ -235,14 +243,14 @@ bool drop(){
 
 bool line(){
 	int save = ptr;
-	return((ptr = 0, selection()) || 
-			(ptr = 0, drop()) ||
-			(ptr = 0, deletion()) ||
-			(ptr = 0, updation()) ||
-			(ptr = 0, creation()) ||
-			(ptr = 0, alter_add()) ||
-			(ptr = 0, alter_drop()) ||
-			(ptr = 0, insertion())
+	return((up(), ptr = 0, selection()) || 
+			(up(), ptr = 0, drop()) ||
+			(up(), ptr = 0, deletion()) ||
+			(up(), ptr = 0, updation()) ||
+			(up(), ptr = 0, creation()) ||
+			(up(), ptr = 0, alter_add()) ||
+			(up(), ptr = 0, alter_drop()) ||
+			(up(), ptr = 0, insertion())
 	  );
 }
 
@@ -280,7 +288,10 @@ int main(){
 		//sanitize();
 		if(ch) printf("PARSING:--> %s\n\n", input);
 		int save = 0;
-		printf("%d", line());
+		int res = line();
+		printf("%d ", res);
+		if(res == 0)
+			printf("  %c%c%c", input[ptr-1], input[ptr], input[ptr+1]); 
 //		if(ch) printf("--  %c %c\n", input[ptr-1], input[ptr]);
 	}
 	return 0;

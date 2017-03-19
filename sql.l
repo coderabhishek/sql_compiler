@@ -29,9 +29,9 @@
 "NOT" {return NOT;}
 "NULL" 	{return NUL;}
 "=" {return EQUAL;}
-"<"|">"|">="|"<="|"=="|"<>" {return COMPARATOR;}
+"<"|">"|">="|"<="|"=="|"<>" {strcpy(yylval.str, yytext); return COMPARATOR;}
 "UNIQUE" 		{return UNIQUE;}
-"*"				{return WILDCARD;}
+"*"				{strcpy(yylval.str, yytext); return WILDCARD;}
 [a-zA-Z]+[a-zA-Z0-9]*	{strcpy(yylval.str, yytext);   return identifier;}
 [0-9]+			{strcpy(yylval.str, yytext); return numeric_val;}
 [ \t\n]			{;}
