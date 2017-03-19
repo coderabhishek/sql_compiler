@@ -45,6 +45,7 @@ bool constant_val(){
 			return false;
 		ptr++;
 	}
+	ptr++;
 	return true;
 }
 
@@ -132,7 +133,7 @@ bool id_list(){
 bool tab_list(){
 	//if(ch) printf("&&\n\n%s\n\n&&", input);
 	int save = ptr;
-	return ((ptr = save, id_list()) || (ptr = save, (BO() && sel() && BC())));
+	return ((ptr = save, id_list()) || (ptr = save, (BO() && selection2() && BC())) || (ptr = save, (BO() && sel() && BC())));
 }
 
 bool columns(){
@@ -158,7 +159,7 @@ bool updation(){
 
 bool updation_list(){
 	int save = ptr;
-	return((ptr = save, identifier() && match("EQUAL", 5) && constant_val() && COMMA() && updation_list()) || (ptr = save, identifier() && match("EQUAL", 5) && constant_val()));
+	return((ptr = save, identifier() && match("=", 1) && v_val() && COMMA() && updation_list()) || (ptr = save, identifier() && match("=", 1) && v_val()));
 }
 
 
@@ -171,7 +172,7 @@ bool alter_drop(){
 }
 
 bool alter_add(){
-	return(match("ALTER", 5) && match("TABLE", 5) && identifier() && match("ADD", 3) && match("COLUMN", 6) && identifier() && identifier() && COL());
+	return(match("ALTER", 5) && match("TABLE", 5) && identifier() && match("ADD", 3) && match("COLUMN", 6) && identifier() && identifier() && constraint() && COL());
 }
 
 
@@ -279,7 +280,7 @@ int main(){
 		//sanitize();
 		if(ch) printf("PARSING:--> %s\n\n", input);
 		int save = 0;
-		if(ch) printf("%d", line());
+		printf("%d", line());
 //		if(ch) printf("--  %c %c\n", input[ptr-1], input[ptr]);
 	}
 	return 0;
