@@ -92,6 +92,7 @@ node * v_val(){
 		return fl;
 	else {
 		ptr = save;
+		//printf("*****%c\n", input[ptr]);
 		node *temp = numeric_val();
 	//	if(ch) printf("050505005050#$%c %c\n", input[ptr-1], input[ptr]);
 		return temp;
@@ -133,7 +134,7 @@ node * COMMA(){
 		up();
 	if(input[up()] == ',')
 		return create(",");
-	else NULL;
+	else return NULL;
 }
 
 
@@ -143,7 +144,7 @@ node * BO(){
 	if(ch) printf("BO  %c\n", input[ptr]);
 	if(input[up()] == '(')
 		return create("(");
-	else NULL;
+	else return NULL;
 	
 }
 node * BC(){
@@ -152,16 +153,19 @@ node * BC(){
 		up();
 	if(input[up()] == ')')
 		return create(")");
-	else NULL;
+	else return NULL;
 }
 
 node * WILDCARD(){
 
 	while(input[ptr]==' ' || input[ptr] == '\t')
 		up();	
-	if(input[up()] == '*')
+	if(input[up()] == '*'){
 		return create("*");
-	else NULL;
+	
+	}
+
+	else return NULL;
 }
 
 node * id_list(){
@@ -227,9 +231,10 @@ node * columns(){
 
 
 node * query(){
-	//if(ch) printf("++    %c %c %c\n", input[ptr], input[ptr+1], input[ptr+2]);
+	if(ch) printf("++    %c %c %c\n", input[ptr], input[ptr+1], input[ptr+2]);
 	node *n1, *n2, *n3;
 	if((n1=columns()) && (n2=match("FROM", 4)) && (n3=tab_list())){
+		
 		node *nd = create("QUERY");
 		nd->child[(nd->cptr++)] = n1;
 		nd->child[(nd->cptr++)] = n2;
@@ -567,6 +572,7 @@ node * condition(){
 		return nd;
        } 
        ptr = save;
+       //printf("888888888888888888888888888%c%c", input[ptr], input[ptr+1]);
        if((n1=identifier()) && (n2=COMPARATOR()) && (n3=v_val())){
        	node *nd = create("SELECTION2");
 		nd->child[(nd->cptr++)] = n1;
@@ -589,8 +595,9 @@ node * constraint(){
 		return nd;
 	}	
 	ptr = save;
+	//printf("0000000000000000000%c%c\n\n", input[ptr], input[ptr+1]);
 	if(n1=condition()){
-		return condition();
+		return n1;
 	}	
 	return NULL;
 }
@@ -604,8 +611,8 @@ int main(){
 		//sanitize();
 		if(ch) printf("PARSING:--> %s\n\n", input);
 		int save = 0;
-		int res = line();
-		printf("%d ", res);
+		node *res = line();
+		printf("%d ", res!=NULL);
 		l_no++;
 		if(res == 0)
 			printf("SYNTAX ERROR near:  \"%c%c%c\"  line no. : %d  col: %d ", input[maxp-1], input[maxp], input[maxp+1], l_no, maxp);
