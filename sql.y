@@ -81,7 +81,7 @@ void print(node *);
 
 %%
 
-program : line program | line
+program : line program | line | error program
 line  : deletion {print($1);}| alter_add {print($1);}| alter_drop {print($1);}| insertion {print($1);}| updation {print($1);}| creation  {		
 print($1);} | selection {print($1);}| drop {print($1);}
 
